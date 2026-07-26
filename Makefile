@@ -12,7 +12,7 @@ ifeq ($(BOARD),csim)
 
 ARDUINO_LIBS_DIR = $(HOME)/Arduino/libraries
 CSIM_BUILD_DIR = ./build/csim
-CSIM_LIBS = esp32csim
+CSIM_LIBS = Arduino_CRC32 ArduinoJson Adafruit_HX711 esp32jimlib esp32csim
 CSIM_SRC_DIRS = $(foreach L,$(CSIM_LIBS),$(ARDUINO_LIBS_DIR)/$(L)/src)
 CSIM_SRC_DIRS += $(foreach L,$(CSIM_LIBS),$(ARDUINO_LIBS_DIR)/$(L))
 CSIM_SRC_DIRS += $(foreach L,$(CSIM_LIBS),$(ARDUINO_LIBS_DIR)/$(L)/src/csim_include)
@@ -59,7 +59,7 @@ csim-clean:
 
 else
 
-LIBS = $(foreach L,esp32jimlib gt911-arduino LovyanGFX lvgl,$(HOME)/Arduino/libraries/$(L))
+LIBS = $(foreach L,Arduino_CRC32 ArduinoJson Adafruit_HX711 esp32jimlib gt911-arduino LovyanGFX lvgl,$(HOME)/Arduino/libraries/$(L))
 BUILD_EXTRA_FLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 BUILD_EXTRA_FLAGS += -DBOARD_HAS_PSRAM
 BUILD_MEMORY_TYPE = qio_opi
@@ -70,7 +70,7 @@ LVGL = $(HOME)/Arduino/libraries/lvgl
 LIBS += $(LGFX)/lgfx/v1/platforms/esp32s3/Panel_RGB.cpp
 LIBS += $(LGFX)/lgfx/v1/platforms/esp32s3/Bus_RGB.cpp
 
-EXCLUDE_DIRS = $(LGFX)/lgfx_user|$(LGFX)/lgfx/v0|$(LGFX)/lgfx/v1/platforms/arduino_default|$(LGFX)/lgfx/v1/platforms/esp32c3|$(LGFX)/lgfx/v1/platforms/esp32s2|$(LGFX)/lgfx/v1/platforms/esp8266|$(LGFX)/lgfx/v1/platforms/framebuffer|$(LGFX)/lgfx/v1/platforms/opencv|$(LGFX)/lgfx/v1/platforms/rp2040|$(LGFX)/lgfx/v1/platforms/samd21|$(LGFX)/lgfx/v1/platforms/samd51|$(LGFX)/lgfx/v1/platforms/sdl|$(LGFX)/lgfx/v1/platforms/spresense|$(LGFX)/lgfx/v1/platforms/stm32|$(LGFX)/lgfx/internal|$(LVGL)/src/libs/thorvg/rapidjson/msinttypes|$(LVGL)/src/draw/sw/blend/helium|$(LVGL)/src/draw/sw/blend/neon
+EXCLUDE_DIRS = $(LGFX)/lgfx_user|$(LGFX)/lgfx/v0|$(LGFX)/lgfx/v1/platforms/arduino_default|$(LGFX)/lgfx/v1/platforms/esp32c3|$(LGFX)/lgfx/v1/platforms/esp32s2|$(LGFX)/lgfx/v1/platforms/esp8266|$(LGFX)/lgfx/v1/platforms/framebuffer|$(LGFX)/lgfx/v1/platforms/opencv|$(LGFX)/lgfx/v1/platforms/rp2040|$(LGFX)/lgfx/v1/platforms/samd21|$(LGFX)/lgfx/v1/platforms/samd51|$(LGFX)/lgfx/v1/platforms/sdl|$(LGFX)/lgfx/v1/platforms/spresense|$(LGFX)/lgfx/v1/platforms/stm32|$(LGFX)/lgfx/internal|$(LVGL)/src/libs/thorvg/rapidjson/msinttypes|$(LVGL)/src/draw/sw/blend/helium|$(LVGL)/src/draw/sw/blend/neon|$(HOME)/Arduino/libraries/esp32csim
 
 include $(HOME)/Arduino/libraries/makeEspArduino/makeEspArduino.mk
 
