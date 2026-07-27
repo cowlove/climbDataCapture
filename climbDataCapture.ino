@@ -1,5 +1,6 @@
 #include "display.h"
 #include "climbDataModel.h"
+#include "rawG5Logger.h"
 
 #include "jimlib.h"
 #include "espNowMux.h"
@@ -24,6 +25,8 @@ static bool lvglEnabled = true;
 
 static const uint32_t samplePeriodMs = 100;
 static const uint32_t uiPeriodMs = 200;
+
+RawG5Logger rawLogger;
 
 class ClimbDataApplication {
 public:
@@ -105,6 +108,12 @@ public:
     data.parsePayload(payload, nowMs);
   }
 
+  void processIncomingPayload(const std::string &payload, uint32_t nowMs,
+                              uint64_t receivedUs) {
+    rawLogger.log(receivedUs, payload);
+    processPayload(payload, nowMs);
+  }
+
   void runLoop(uint32_t nowMs) {
     if ((uint32_t)(nowMs - lastSampleMs) >= samplePeriodMs) {
       lastSampleMs = nowMs;
@@ -164,6 +173,7 @@ private:
 
   void toggleCapture(uint32_t nowMs) {
     if (run.active) {
+      rawLogger.stop();
       RunSummary summary;
       if (run.stop(completedRuns.size() + 1, summary)) {
         completedRuns.push_back(summary);
@@ -181,9 +191,15 @@ private:
         transientStatus = "WAITING FOR FRESH G5 DATA";
         return;
       }
+      if (!rawLogger.start()) {
+        transientStatus = "LOG FILE COULD NOT START";
+        Serial.println("Could not start raw G5 log file");
+        return;
+      }
       run.start(data.sample(nowMs / 1000.0));
       transientStatus = "";
-      Serial.println("Started climb data run");
+      RawG5LogStatus logStatus = rawLogger.status();
+      Serial.printf("Started climb data run: %s\n", logStatus.filename);
     }
     updateUi(nowMs);
   }
@@ -270,17 +286,31 @@ private:
     }
 
     if (run.active) {
+      RawG5LogStatus logStatus = rawLogger.status();
       lv_label_set_text(captureButtonLabel, "STOP");
       lv_obj_set_style_bg_color(captureButton,
                                 lv_palette_main(LV_PALETTE_RED), LV_PART_MAIN);
-      snprintf(text, sizeof(text), "RECORDING\n%.1f sec  %d samples",
-               run.duration(nowMs / 1000.0), run.samples());
+      if (logStatus.writeErrors > 0 || !logStatus.recording) {
+        snprintf(text, sizeof(text), "LOG ERROR - STOP\n%s", logStatus.filename);
+      } else {
+        snprintf(text, sizeof(text), "REC %.1f sec %s\n%lu w %lu q %lu drop",
+                 run.duration(nowMs / 1000.0), logStatus.filename,
+                 (unsigned long)logStatus.packetsWritten,
+                 (unsigned long)logStatus.packetsQueued,
+                 (unsigned long)logStatus.packetsDropped);
+      }
       lv_label_set_text(captureStatusLabel, text);
     } else {
       lv_label_set_text(captureButtonLabel, "START");
       lv_obj_set_style_bg_color(captureButton,
                                 lv_palette_main(LV_PALETTE_GREEN), LV_PART_MAIN);
-      if (!transientStatus.empty()) {
+      RawG5LogStatus logStatus = rawLogger.status();
+      if (logStatus.closing) {
+        lv_label_set_text(captureStatusLabel, "SAVING LOG...");
+      } else if (logStatus.writeErrors > 0) {
+        snprintf(text, sizeof(text), "LOG ERROR\n%s", logStatus.filename);
+        lv_label_set_text(captureStatusLabel, text);
+      } else if (!transientStatus.empty()) {
         lv_label_set_text(captureStatusLabel, transientStatus.c_str());
       } else {
         snprintf(text, sizeof(text), "READY\n%d completed runs",
@@ -337,6 +367,22 @@ ClimbDataApplication application;
 JStuff j;
 ReliableStreamESPNow g5Stream("G5", true);
 
+static std::string serialCommand;
+
+static void handleSerialCommands() {
+  while (Serial.available()) {
+    char character = Serial.read();
+    if (character == '\r') continue;
+    if (character == '\n') {
+      if (!serialCommand.empty() && !rawLogger.handleCommand(serialCommand))
+        Serial.println("Unknown command. Use LOG HELP");
+      serialCommand.clear();
+    } else if (serialCommand.size() < 96) {
+      serialCommand += character;
+    }
+  }
+}
+
 #ifdef CSIM
 static void generateDemoData(uint32_t nowMs) {
   static uint32_t lastDemoMs = 0;
@@ -356,12 +402,15 @@ static void generateDemoData(uint32_t nowMs) {
   snprintf(payload, sizeof(payload),
            "P=%.4f IAS=%.3f TAS=%.3f PALT=%.4f\n", pitch, ias, tas,
            altitudeFt / FEET_PER_METER_CDC);
-  application.processPayload(payload, nowMs);
+  application.processIncomingPayload(payload, nowMs, rawLogger.timestampUs());
 }
 #endif
 
 void setup() {
   Serial.begin(115200);
+
+  if (!rawLogger.begin())
+    Serial.println("Raw G5 logging unavailable");
 
   if (!lvglEnabled) {
     Serial.println("Run with --lvgl to open the display simulator");
@@ -374,10 +423,13 @@ void setup() {
 
 void loop() {
   uint32_t nowMs = millis();
+  handleSerialCommands();
   if (lvglEnabled) {
     std::string payload;
     while (g5Stream.read(payload)) {
-      application.processPayload(payload, nowMs);
+      uint64_t receivedUs = rawLogger.timestampUs();
+      nowMs = millis();
+      application.processIncomingPayload(payload, nowMs, receivedUs);
     }
 #ifdef CSIM
     generateDemoData(nowMs);

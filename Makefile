@@ -68,6 +68,18 @@ BOARD_OPTIONS = PartitionScheme=min_spiffs
 cat:    
 	while sleep .01; do if [ -c ${PORT} ]; then stty -F ${PORT} -echo raw 115200 && cat ${PORT}; fi; done  | tee ./cat.`basename ${PORT}`.out
 
+.PHONY: logs get-log delete-log
+logs:
+	python3 scripts/g5_log_tool.py --port $(UPLOAD_PORT) list
+
+get-log:
+	@test -n "$(LOG)" || (echo "Usage: make get-log LOG=/G5_001.TSV [OUT=G5_001.TSV]"; exit 1)
+	python3 scripts/g5_log_tool.py --port $(UPLOAD_PORT) get $(LOG) $(or $(OUT),$(notdir $(LOG)))
+
+delete-log:
+	@test -n "$(LOG)" || (echo "Usage: make delete-log LOG=/G5_001.TSV"; exit 1)
+	python3 scripts/g5_log_tool.py --port $(UPLOAD_PORT) delete $(LOG)
+
 LGFX = $(HOME)/Arduino/libraries/LovyanGFX/src
 LVGL = $(HOME)/Arduino/libraries/lvgl
 LIBS += $(LGFX)/lgfx/v1/platforms/esp32s3/Panel_RGB.cpp
