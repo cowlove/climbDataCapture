@@ -5,6 +5,7 @@ IGNORE_STATE = 1
 
 GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always 2>/dev/null || echo unknown)
 SKETCH_NAME := $(shell basename `pwd`)
+PART_FILE=./partitions.csv
 
 ifeq ($(BOARD),csim)
 
@@ -64,6 +65,8 @@ BUILD_EXTRA_FLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 BUILD_EXTRA_FLAGS += -DBOARD_HAS_PSRAM
 BUILD_MEMORY_TYPE = qio_opi
 BOARD_OPTIONS = PartitionScheme=min_spiffs
+cat:    
+	while sleep .01; do if [ -c ${PORT} ]; then stty -F ${PORT} -echo raw 115200 && cat ${PORT}; fi; done  | tee ./cat.`basename ${PORT}`.out
 
 LGFX = $(HOME)/Arduino/libraries/LovyanGFX/src
 LVGL = $(HOME)/Arduino/libraries/lvgl
