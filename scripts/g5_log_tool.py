@@ -10,11 +10,19 @@ import serial
 
 
 def open_serial(args):
-    connection = serial.Serial(args.port, args.baud, timeout=args.timeout)
+    # Configure the ESP32 auto-reset control lines before opening the device.
+    # Opening with pyserial's defaults can briefly assert DTR/RTS, resetting the
+    # board and sometimes selecting its ROM bootloader.
+    connection = serial.Serial()
+    connection.port = args.port
+    connection.baudrate = args.baud
+    connection.timeout = args.timeout
     connection.dtr = False
-    # Opening common ESP32 serial adapters may reset the board. Allow setup(),
-    # including the display and filesystem mount, to complete before sending.
-    time.sleep(1.0)
+    connection.rts = False
+    connection.open()
+    connection.dtr = False
+    connection.rts = False
+    time.sleep(0.15)
     connection.reset_input_buffer()
     return connection
 
