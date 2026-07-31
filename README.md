@@ -11,6 +11,11 @@ regression-derived vertical speed. The scrollable table retains every completed
 run in RAM for manual transcription; its contents are lost if the device resets
 or loses power.
 
+`PALT` is meters on the G5 wire. This application intentionally converts it to
+feet in `G5Data::parsePayload()` before stability, altitude, or vertical-speed
+calculations. Preserve that conversion; changing the producer's existing field
+to feet would double-convert this consumer.
+
 Each START/STOP run also stores every complete raw G5 payload in its own
 sequential file (`/G5_001.TSV`, `/G5_002.TSV`, and so on) on the internal flash
 filesystem. The partition historically named `spiffs` is mounted with LittleFS,
