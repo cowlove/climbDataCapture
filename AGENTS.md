@@ -4,6 +4,17 @@ This file is the durable handoff for future assistant work in this repository.
 Keep the application standalone and preserve the hardware-specific build details
 below; several of them were learned by testing on the actual aircraft display.
 
+## Archived Project Status
+
+- Jim retired this ESP32 hardware application on 2026-08-02. The Android-based
+  `climbDataAndroid` application is the active and strongly preferred platform.
+- Preserve this repository as an intact, buildable toy/reference LVGL
+  application. Do not plan deployments, hardware refreshes, migrations, or new
+  features unless Jim explicitly reopens the project.
+- It should continue to compile against current `esp32jimlib`. Its existing
+  `ReliableStreamESPNow` dependency supplies the current escaped-length/CRC
+  framing automatically; do not add legacy `XOXEND` compatibility.
+
 ## Purpose And Project Boundaries
 
 - This is a standalone direct-LVGL application for gathering steady-state climb

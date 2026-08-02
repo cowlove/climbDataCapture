@@ -1,7 +1,19 @@
 # climbDataCapture
 
+> **Archived / abandoned hardware application.** This ESP32/LVGL implementation
+> is no longer an active product or deployment target. The Android-based
+> `climbDataAndroid` application replaced it and is the supported climb-data
+> platform. This repository is retained intact as a small, buildable example of
+> a direct LVGL application; no further feature development is planned.
+
 Standalone LVGL application for collecting and analyzing climb data received
 from a G5 over `ReliableStreamESPNow`.
+
+The retained application follows the current jimlib ReliableStream wire format
+through its `ReliableStreamESPNow` dependency. Current framing is
+`~<hex escaped-length>|<escaped payload>|<8-hex CRC>`; the legacy `XOXEND`
+format is not supported. Rebuild against the current local `esp32jimlib` when
+using this repository as a reference.
 
 The application consumes the ad-hoc numeric G5 fields `P`, `PALT`, `IAS`, and
 `TAS`. It shows live data and a rolling 10-second stability assessment. A
